@@ -1,0 +1,18 @@
+{
+  "version": "V3",
+  "years": {
+    "2019": {
+      "complete": false,
+      "rows": 7174,
+      "stocks": 30,
+      "date_min": "2019-01-02",
+      "date_max": "2019-12-31",
+      "failed": 62
+    }
+  },
+  "date_min": "2019-01-02",
+  "date_max": "2019-12-31",
+  "attempted_max": null,
+  "total_rows": 7174,
+  "last_run": "2026-09-29T21:26:12Z"
+}
