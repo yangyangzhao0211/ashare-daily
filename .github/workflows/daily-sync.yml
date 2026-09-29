@@ -6,6 +6,10 @@ on:
     - cron: "30 8 * * 1-5"
   workflow_dispatch:  # 允许手动触发（首次全量回填用这个）
 
+# 修复 GITHUB_TOKEN 默认只读导致无法 git push 的问题
+permissions:
+  contents: write
+
 concurrency:
   group: ashare-daily-sync
   cancel-in-progress: false
@@ -13,7 +17,7 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
 
@@ -26,7 +30,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Sync A-share daily bars
-        run: python sync_daily.py
+        run: python scripts/sync_daily.py
 
       - name: Commit and push
         run: |
