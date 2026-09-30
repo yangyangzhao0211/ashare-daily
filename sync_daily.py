@@ -197,28 +197,274 @@ def universe():
     )
 
 def delisted():
-    fs=[]
+    """
+    Best-effort delisted-stock list.
+
+    Returns:
+        code, name, list_date, delist_date
+
+    Failure of either exchange source is non-fatal.
+    This implementation deliberately selects columns instead of
+    renaming many columns at once, avoiding duplicate column names.
+    """
+
+    frames = []
+
+    # ========================================================
+    # Shanghai
+    # ========================================================
+
     try:
-        x=ak.stock_info_sh_delist('全部').rename(columns={'公司代码':'code','公司简称':'name','上市日期':'list_date','暂停上市日期':'delist_date'})
-        for c in ['name','list_date','delist_date']:
-            if c not in x:x[c]=None
-        fs.append(x[['code','name','list_date','delist_date']])
-    except Exception as e: print('SH delist failed',e)
+        raw = ak.stock_info_sh_delist("全部")
+
+        if raw is not None and not raw.empty:
+
+            def pick_sh(candidates):
+                for c in candidates:
+                    if c in raw.columns:
+                        return raw[c]
+                return pd.Series([None] * len(raw))
+
+            sh = pd.DataFrame({
+                "code": pick_sh([
+                    "公司代码",
+                    "证券代码",
+                    "股票代码",
+                ]),
+
+                "name": pick_sh([
+                    "公司简称",
+                    "证券简称",
+                    "股票简称",
+                    "名称",
+                ]),
+
+                "list_date": pick_sh([
+                    "上市日期",
+                ]),
+
+                "delist_date": pick_sh([
+                    "终止上市日期",
+                    "退市日期",
+                    "暂停上市日期",
+                ]),
+            })
+
+            sh["code"] = sh["code"].map(code)
+
+            sh = sh[
+                sh["code"] != ""
+            ].drop_duplicates("code")
+
+            frames.append(sh)
+
+            print(
+                f"SH delisted: {len(sh)}",
+                flush=True
+            )
+
+    except Exception as e:
+        print(
+            f"SH delist failed: "
+            f"{type(e).__name__}: {e}",
+            flush=True
+        )
+
+    # ========================================================
+    # Shenzhen
+    # ========================================================
+
     try:
-        x=ak.stock_info_sz_delist('终止上市公司'); r={}
-        for c in x.columns:
-            s=str(c)
-            if '代码' in s:r[c]='code'
-            elif '简称' in s or '名称' in s:r[c]='name'
-            elif '上市日期' in s:r[c]='list_date'
-            elif '日期' in s and ('终止' in s or '暂停' in s):r[c]='delist_date'
-        x=x.rename(columns=r)
-        for c in ['code','name','list_date','delist_date']:
-            if c not in x:x[c]=None
-        fs.append(x[['code','name','list_date','delist_date']])
-    except Exception as e: print('SZ delist failed',e)
-    if not fs:return pd.DataFrame(columns=['code','name','list_date','delist_date'])
-    x=pd.concat(fs,ignore_index=True); x.code=x.code.map(code); x=x[x.code!=''].drop_duplicates('code'); x.list_date=pd.to_datetime(x.list_date,errors='coerce'); x.delist_date=pd.to_datetime(x.delist_date,errors='coerce'); x.to_csv(DELIST,index=False); return x
+        raw = ak.stock_info_sz_delist(
+            "终止上市公司"
+        )
+
+        if raw is not None and not raw.empty:
+
+            def find_column(keywords,
+                            exclude_keywords=None):
+
+                exclude_keywords = (
+                    exclude_keywords or []
+                )
+
+                for c in raw.columns:
+
+                    text = str(c)
+
+                    if (
+                        all(
+                            k in text
+                            for k in keywords
+                        )
+                        and not any(
+                            k in text
+                            for k in exclude_keywords
+                        )
+                    ):
+                        return c
+
+                return None
+
+            code_col = (
+                find_column(["代码"])
+            )
+
+            name_col = (
+                find_column(["简称"])
+                or find_column(["名称"])
+            )
+
+            list_col = find_column([
+                "上市",
+                "日期",
+            ])
+
+            delist_col = (
+                find_column([
+                    "终止",
+                    "日期",
+                ])
+                or find_column([
+                    "退市",
+                    "日期",
+                ])
+            )
+
+            sz = pd.DataFrame()
+
+            if code_col is not None:
+                sz["code"] = raw[code_col]
+            else:
+                sz["code"] = None
+
+            if name_col is not None:
+                sz["name"] = raw[name_col]
+            else:
+                sz["name"] = None
+
+            if list_col is not None:
+                sz["list_date"] = raw[list_col]
+            else:
+                sz["list_date"] = None
+
+            if delist_col is not None:
+                sz["delist_date"] = raw[delist_col]
+            else:
+                sz["delist_date"] = None
+
+            sz["code"] = sz["code"].map(code)
+
+            sz = sz[
+                sz["code"] != ""
+            ].drop_duplicates("code")
+
+            frames.append(sz)
+
+            print(
+                f"SZ delisted: {len(sz)}",
+                flush=True
+            )
+
+    except Exception as e:
+        print(
+            f"SZ delist failed: "
+            f"{type(e).__name__}: {e}",
+            flush=True
+        )
+
+    # ========================================================
+    # Merge
+    # ========================================================
+
+    if not frames:
+
+        print(
+            "delisted: unavailable; "
+            "continuing with empty list",
+            flush=True
+        )
+
+        return pd.DataFrame(
+            columns=[
+                "code",
+                "name",
+                "list_date",
+                "delist_date",
+            ]
+        )
+
+    try:
+
+        x = pd.concat(
+            frames,
+            ignore_index=True,
+            sort=False,
+        )
+
+    except Exception as e:
+
+        print(
+            f"delisted concat failed: {e}; "
+            "continuing with empty list",
+            flush=True
+        )
+
+        return pd.DataFrame(
+            columns=[
+                "code",
+                "name",
+                "list_date",
+                "delist_date",
+            ]
+        )
+
+    # Guarantee unique standardized columns.
+    x = x[
+        [
+            "code",
+            "name",
+            "list_date",
+            "delist_date",
+        ]
+    ].copy()
+
+    x["code"] = x["code"].map(code)
+
+    x = (
+        x[x["code"] != ""]
+        .drop_duplicates("code")
+        .reset_index(drop=True)
+    )
+
+    x["list_date"] = pd.to_datetime(
+        x["list_date"],
+        errors="coerce",
+    )
+
+    x["delist_date"] = pd.to_datetime(
+        x["delist_date"],
+        errors="coerce",
+    )
+
+    try:
+        x.to_csv(
+            DELIST,
+            index=False
+        )
+
+    except Exception as e:
+        print(
+            f"WARNING: cannot save delist.csv: {e}",
+            flush=True
+        )
+
+    print(
+        f"delisted total: {len(x)}",
+        flush=True
+    )
+
+    return x
 
 def em(c,s,e):
     x=ak.stock_zh_a_hist(symbol=c,period='daily',start_date=s,end_date=e,adjust='')
