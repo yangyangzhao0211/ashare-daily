@@ -577,15 +577,228 @@ def history(uni,dl,state,namemap,stmap):
         yrs+=1
 
 def main():
-    print('A-share daily database V4.0',dt.date.today(),'MODE=',MODE,flush=True)
-    u=universe();dl=delisted(); nm=dict(zip(u.code,u.name)); sm=dict(zip(u.code,u.is_st));
-    for _,r in dl.iterrows():nm.setdefault(str(r.code),r.get('name',''));sm.setdefault(str(r.code),bool(re.match(r'^\*?ST',str(r.get('name','')))))
-    state=load(STATE,{'recent':{},'history':{'years':{}},'failed':{}})
-    if not isinstance(state.get('failed'),dict):state['failed']={}
-    state.setdefault('recent',{});state.setdefault('history',{'years':{}});state['history'].setdefault('years',{})
-    if MODE=='recent':recent(u,state,nm,sm)
-    elif MODE=='history':history(u,dl,state,nm,sm)
-    elif MODE=='both':recent(u,state,nm,sm);history(u,dl,state,nm,sm)
-    else:raise ValueError('MODE must be recent/history/both')
-    write_meta();save(STATE,state);print('V4 DONE',flush=True)
+
+    print(
+        "A-share daily database V4.0",
+        dt.date.today(),
+        "MODE=",
+        MODE,
+        flush=True
+    )
+
+    # ========================================================
+    # Current listed universe
+    # ========================================================
+
+    u = universe()
+
+    nm = dict(
+        zip(
+            u.code,
+            u.name
+        )
+    )
+
+    sm = dict(
+        zip(
+            u.code,
+            u.is_st
+        )
+    )
+
+    # ========================================================
+    # Load state
+    # ========================================================
+
+    state = load(
+        STATE,
+        {
+            "recent": {},
+            "history": {
+                "years": {}
+            },
+            "failed": {},
+        }
+    )
+
+    if not isinstance(
+        state.get("failed"),
+        dict
+    ):
+        state["failed"] = {}
+
+    state.setdefault(
+        "recent",
+        {}
+    )
+
+    state.setdefault(
+        "history",
+        {
+            "years": {}
+        }
+    )
+
+    state["history"].setdefault(
+        "years",
+        {}
+    )
+
+    # ========================================================
+    # RECENT
+    # ========================================================
+    #
+    # Recent mode does NOT need delisted stocks.
+    # Avoid unnecessary fragile network calls.
+    # ========================================================
+
+    if MODE == "recent":
+
+        print(
+            "recent mode: skipping delisted lookup",
+            flush=True
+        )
+
+        recent(
+            u,
+            state,
+            nm,
+            sm
+        )
+
+    # ========================================================
+    # HISTORY
+    # ========================================================
+
+    elif MODE == "history":
+
+        print(
+            "history mode: loading delisted stocks",
+            flush=True
+        )
+
+        dl = delisted()
+
+        for _, r in dl.iterrows():
+
+            c = str(
+                r.code
+            )
+
+            nm.setdefault(
+                c,
+                r.get(
+                    "name",
+                    ""
+                )
+            )
+
+            sm.setdefault(
+                c,
+                bool(
+                    re.match(
+                        r"^\*?ST",
+                        str(
+                            r.get(
+                                "name",
+                                ""
+                            )
+                        )
+                    )
+                )
+            )
+
+        history(
+            u,
+            dl,
+            state,
+            nm,
+            sm
+        )
+
+    # ========================================================
+    # BOTH
+    # ========================================================
+
+    elif MODE == "both":
+
+        # Recent first.
+        print(
+            "both mode: running recent first",
+            flush=True
+        )
+
+        recent(
+            u,
+            state,
+            nm,
+            sm
+        )
+
+        # Then history.
+        print(
+            "both mode: loading delisted stocks",
+            flush=True
+        )
+
+        dl = delisted()
+
+        for _, r in dl.iterrows():
+
+            c = str(
+                r.code
+            )
+
+            nm.setdefault(
+                c,
+                r.get(
+                    "name",
+                    ""
+                )
+            )
+
+            sm.setdefault(
+                c,
+                bool(
+                    re.match(
+                        r"^\*?ST",
+                        str(
+                            r.get(
+                                "name",
+                                ""
+                            )
+                        )
+                    )
+                )
+            )
+
+        history(
+            u,
+            dl,
+            state,
+            nm,
+            sm
+        )
+
+    else:
+
+        raise ValueError(
+            "MODE must be recent/history/both"
+        )
+
+    # ========================================================
+    # Metadata
+    # ========================================================
+
+    write_meta()
+
+    save(
+        STATE,
+        state
+    )
+
+    print(
+        "V4 DONE",
+        flush=True
+    )
 if __name__=='__main__':main()
