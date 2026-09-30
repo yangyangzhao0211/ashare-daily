@@ -2,80 +2,51 @@ name: ashare-daily-sync
 
 on:
   schedule:
-    # 16:30 Beijing time = 08:30 UTC
-    # Monday-Friday
+    # 16:30 Beijing time = 08:30 UTC, Monday-Friday
     - cron: "30 8 * * 1-5"
-
-  # Allows manual execution from GitHub Actions
   workflow_dispatch:
 
-# Required for git push
 permissions:
   contents: write
 
-# Prevent two copies of the same workflow
-# from modifying the database simultaneously.
 concurrency:
   group: ashare-daily-sync
   cancel-in-progress: false
 
 jobs:
   sync:
-    runs-on: ubuntu-latest
-
-    # V3 is deliberately checkpointed, so even a timeout
-    # does not destroy completed work.
-    timeout-minutes: 120
+    # Pin the runner instead of ubuntu-latest to avoid surprise image migrations.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
 
     steps:
-
-      # ------------------------------------------------------
-      # Checkout repository
-      # ------------------------------------------------------
-
       - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # ------------------------------------------------------
-      # Python
-      # ------------------------------------------------------
+        uses: actions/checkout@v5
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
-
-      # ------------------------------------------------------
-      # Dependencies
-      # ------------------------------------------------------
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ------------------------------------------------------
-      # Run sync
-      # ------------------------------------------------------
-
       - name: Sync A-share daily bars
         run: |
           python sync_daily.py
 
-      # ------------------------------------------------------
-      # Commit database changes
-      # ------------------------------------------------------
-
-      - name: Commit and push
+      # sync_daily.py itself creates checkpoint commits during long backfills.
+      # This step is mainly for any final data changes not yet committed.
+      - name: Commit and push remaining changes
         run: |
           git config user.name "ashare-bot"
           git config user.email "ashare-bot@users.noreply.github.com"
-
           git add data/
-
           if git diff --cached --quiet; then
-            echo "No data changes to commit."
+            echo "No remaining changes to commit."
           else
             git commit -m "daily sync $(date -u +%Y-%m-%d)"
             git push
