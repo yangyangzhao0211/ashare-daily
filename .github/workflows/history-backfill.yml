@@ -1,20 +1,20 @@
-name: ashare-daily-v4
+name: ashare-history-v4
 on:
-  schedule:
-    - cron: "30 8 * * 1-5"
   workflow_dispatch:
+  schedule:
+    - cron: "30 19 * * 1-5"
 permissions:
   contents: write
 concurrency:
-  group: ashare-daily-v4
+  group: ashare-history-v4
   cancel-in-progress: false
 jobs:
-  recent:
+  history:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 360
     env:
-      MODE: recent
-      RECENT_DAYS: 130
+      MODE: history
+      HISTORY_YEARS_PER_RUN: 1
       MAX_WORKERS: 8
       BATCH_SIZE: 200
       RETRIES: 3
@@ -27,11 +27,11 @@ jobs:
           cache: pip
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Run V4 recent sync
+      - name: Run V4 history backfill
         run: python sync_daily_v4.py
       - name: Commit and push
         run: |
           git config user.name "ashare-bot"
           git config user.email "ashare-bot@users.noreply.github.com"
           git add data/
-          if git diff --cached --quiet; then echo "No changes"; else git commit -m "V4 recent sync $(date -u +%Y-%m-%d)"; git push; fi
+          if git diff --cached --quiet; then echo "No changes"; else git commit -m "V4 history sync $(date -u +%Y-%m-%d)"; git push; fi
