@@ -22,13 +22,179 @@ def code(x):
     m=re.search(r'(\d{6})',str(x or '')); return m.group(1) if m else ''
 
 def universe():
+    """
+    Robust A-share universe loader.
+
+    Priority:
+    1. Eastmoney current full-market snapshot
+    2. AkShare static A-share list
+    3. Existing local data/universe.csv
+
+    The local fallback is only accepted if it contains a plausible
+    full-market universe (>4500 stocks), so a partial/stale file
+    cannot silently corrupt the database.
+    """
+
+    # --------------------------------------------------------
+    # 1. Eastmoney live universe
+    # --------------------------------------------------------
     try:
-        x=ak.stock_zh_a_spot_em()[['代码','名称']].copy(); x.columns=['code','name']; x.code=x.code.map(code); x=x[x.code!=''].drop_duplicates('code')
-        if len(x)<4500: raise RuntimeError('incomplete EM universe')
-        print('universe: Eastmoney',len(x),flush=True)
-    except Exception:
-        x=ak.stock_info_a_code_name().copy(); x['code']=x['code'].map(code); x=x[['code','name']].drop_duplicates('code'); print('universe: AkShare fallback',len(x),flush=True)
-    x['is_st']=x.name.fillna('').str.match(r'^\*?ST'); x.to_csv(UNIVERSE,index=False); return x
+        x = ak.stock_zh_a_spot_em()[["代码", "名称"]].copy()
+
+        x.columns = ["code", "name"]
+
+        x["code"] = x["code"].map(code)
+
+        x = (
+            x[x["code"] != ""]
+            .drop_duplicates("code")
+            .reset_index(drop=True)
+        )
+
+        if len(x) < 4500:
+            raise RuntimeError(
+                f"incomplete Eastmoney universe: {len(x)} stocks"
+            )
+
+        x["is_st"] = (
+            x["name"]
+            .fillna("")
+            .str.match(r"^\*?ST")
+        )
+
+        print(
+            f"universe: Eastmoney {len(x)} stocks",
+            flush=True
+        )
+
+        x.to_csv(
+            UNIVERSE,
+            index=False
+        )
+
+        return x
+
+    except Exception as e:
+        print(
+            f"Eastmoney universe failed: {type(e).__name__}: {e}",
+            flush=True
+        )
+
+    # --------------------------------------------------------
+    # 2. AkShare static universe
+    # --------------------------------------------------------
+    try:
+        x = ak.stock_info_a_code_name().copy()
+
+        x["code"] = x["code"].map(code)
+
+        x = (
+            x[["code", "name"]]
+            .drop_duplicates("code")
+            .reset_index(drop=True)
+        )
+
+        x = x[x["code"] != ""]
+
+        if len(x) < 4500:
+            raise RuntimeError(
+                f"incomplete AkShare universe: {len(x)} stocks"
+            )
+
+        x["is_st"] = (
+            x["name"]
+            .fillna("")
+            .str.match(r"^\*?ST")
+        )
+
+        print(
+            f"universe: AkShare fallback {len(x)} stocks",
+            flush=True
+        )
+
+        x.to_csv(
+            UNIVERSE,
+            index=False
+        )
+
+        return x
+
+    except Exception as e:
+        print(
+            f"AkShare universe failed: {type(e).__name__}: {e}",
+            flush=True
+        )
+
+    # --------------------------------------------------------
+    # 3. Local repository fallback
+    # --------------------------------------------------------
+    try:
+        if os.path.exists(UNIVERSE):
+
+            x = pd.read_csv(
+                UNIVERSE,
+                dtype={"code": str}
+            )
+
+            if "code" not in x.columns or "name" not in x.columns:
+                raise RuntimeError(
+                    "local universe.csv missing code/name columns"
+                )
+
+            x["code"] = x["code"].map(code)
+
+            x = (
+                x[x["code"] != ""]
+                .drop_duplicates("code")
+                .reset_index(drop=True)
+            )
+
+            if len(x) < 4500:
+                raise RuntimeError(
+                    f"local universe too small: {len(x)} stocks"
+                )
+
+            if "is_st" not in x.columns:
+                x["is_st"] = (
+                    x["name"]
+                    .fillna("")
+                    .str.match(r"^\*?ST")
+                )
+
+            else:
+                x["is_st"] = (
+                    x["is_st"]
+                    .astype(str)
+                    .str.lower()
+                    .isin(["true", "1", "yes"])
+                )
+
+            print(
+                f"universe: local fallback {len(x)} stocks",
+                flush=True
+            )
+
+            return x[
+                ["code", "name", "is_st"]
+            ]
+
+        raise RuntimeError(
+            "data/universe.csv does not exist"
+        )
+
+    except Exception as e:
+        print(
+            f"Local universe fallback failed: {type(e).__name__}: {e}",
+            flush=True
+        )
+
+    # --------------------------------------------------------
+    # All methods failed
+    # --------------------------------------------------------
+    raise RuntimeError(
+        "Cannot obtain a reliable A-share universe "
+        "from Eastmoney, AkShare, or local universe.csv"
+    )
 
 def delisted():
     fs=[]
