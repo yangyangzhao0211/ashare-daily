@@ -5591,5 +5591,6 @@
   "last_batch_start": 5501,
   "last_batch_end": 5542,
   "total_remaining_at_start": 5542,
-  "updated_at": "2026-09-30T20:46:43Z"
+  "updated_at": "2026-09-30T20:46:45Z",
+  "failed_count": 5372
 }
