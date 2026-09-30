@@ -2,14 +2,19 @@ name: ashare-daily-sync
 
 on:
   schedule:
-    # 每天 16:30 北京时间 (08:30 UTC)，仅交易日
+    # 16:30 Beijing time = 08:30 UTC
+    # Monday-Friday
     - cron: "30 8 * * 1-5"
-  workflow_dispatch:  # 允许手动触发（首次全量回填用这个）
 
-# 修复 GITHUB_TOKEN 默认只读导致无法 git push 的问题
+  # Allows manual execution from GitHub Actions
+  workflow_dispatch:
+
+# Required for git push
 permissions:
   contents: write
 
+# Prevent two copies of the same workflow
+# from modifying the database simultaneously.
 concurrency:
   group: ashare-daily-sync
   cancel-in-progress: false
@@ -17,28 +22,60 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+    # V3 is deliberately checkpointed, so even a timeout
+    # does not destroy completed work.
+    timeout-minutes: 120
+
+    steps:
+
+      # ------------------------------------------------------
+      # Checkout repository
+      # ------------------------------------------------------
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------
+      # Python
+      # ------------------------------------------------------
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
 
+      # ------------------------------------------------------
+      # Dependencies
+      # ------------------------------------------------------
+
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # ------------------------------------------------------
+      # Run sync
+      # ------------------------------------------------------
 
       - name: Sync A-share daily bars
-        run: python sync_daily.py
+        run: |
+          python sync_daily.py
+
+      # ------------------------------------------------------
+      # Commit database changes
+      # ------------------------------------------------------
 
       - name: Commit and push
         run: |
           git config user.name "ashare-bot"
           git config user.email "ashare-bot@users.noreply.github.com"
+
           git add data/
+
           if git diff --cached --quiet; then
-            echo "no changes, skip commit"
+            echo "No data changes to commit."
           else
             git commit -m "daily sync $(date -u +%Y-%m-%d)"
             git push
