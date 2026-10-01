@@ -3,9 +3,15 @@
   "tasks": {},
   "gate": {
     "id": "v5.0-shsz-unadjusted-strict-active-coverage",
-    "passed": false,
-    "started_at": "2026-10-01T14:51:40.459241+00:00",
-    "error": "timeout_or_transport: request deadline exceeded",
-    "checked_at": "2026-10-01T14:57:23.842147+00:00"
+    "passed": true,
+    "checked_at": "2026-10-01T22:51:14.549500+00:00",
+    "sample_dates": [
+      "2019-01-02",
+      "2022-01-04",
+      "2025-01-02",
+      "2026-09-29",
+      "2026-09-30"
+    ],
+    "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded"
   }
 }

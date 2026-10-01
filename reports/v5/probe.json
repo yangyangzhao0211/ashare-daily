@@ -1,7 +1,7 @@
 {
   "version": "5.0",
   "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded",
-  "passed": false,
+  "passed": true,
   "samples": [
     {
       "date": "2019-01-02",
@@ -87,10 +87,145 @@
           "unadjusted_price_basis_checked": true
         }
       ]
+    },
+    {
+      "date": "2025-01-02",
+      "quality": {
+        "date": "2025-01-02",
+        "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded",
+        "expected_active": 5105,
+        "universe_stocks": 5121,
+        "received_stocks": 5121,
+        "missing_active": [],
+        "unexpected_codes": [],
+        "source_universe_complete": true,
+        "all_china_a_complete": false,
+        "status": "complete",
+        "missing_st_flags": 0,
+        "active_rows": 5105,
+        "reason": "All expected active stocks of the historical source universe received"
+      },
+      "cross_checks": [
+        {
+          "code": "sh.600000",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sz.000001",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sz.300001",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sh.688001",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sh.600070",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        }
+      ]
+    },
+    {
+      "date": "2026-09-29",
+      "quality": {
+        "date": "2026-09-29",
+        "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded",
+        "expected_active": 5210,
+        "universe_stocks": 5222,
+        "received_stocks": 5222,
+        "missing_active": [],
+        "unexpected_codes": [],
+        "source_universe_complete": true,
+        "all_china_a_complete": false,
+        "status": "complete",
+        "missing_st_flags": 0,
+        "active_rows": 5210,
+        "reason": "All expected active stocks of the historical source universe received"
+      },
+      "cross_checks": [
+        {
+          "code": "sh.600000",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sz.000001",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sz.300001",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sh.688001",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sh.600053",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        }
+      ]
+    },
+    {
+      "date": "2026-09-30",
+      "quality": {
+        "date": "2026-09-30",
+        "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded",
+        "expected_active": 5212,
+        "universe_stocks": 5223,
+        "received_stocks": 5223,
+        "missing_active": [],
+        "unexpected_codes": [],
+        "source_universe_complete": true,
+        "all_china_a_complete": false,
+        "status": "complete",
+        "missing_st_flags": 0,
+        "active_rows": 5212,
+        "reason": "All expected active stocks of the historical source universe received"
+      },
+      "cross_checks": [
+        {
+          "code": "sh.600000",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sz.000001",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sz.300001",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sh.688001",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sh.600053",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        }
+      ]
     }
   ],
   "all_china_a_complete": false,
-  "started_at": "2026-10-01T14:51:40.459323+00:00",
-  "error": "timeout_or_transport: request deadline exceeded",
-  "completed_at": "2026-10-01T14:57:23.842118+00:00"
+  "started_at": "2026-10-01T22:49:53.782453+00:00",
+  "completed_at": "2026-10-01T22:51:14.549490+00:00",
+  "note": "Verified against BaoStock historical universe and single-stock endpoint; not independent vendor validation"
 }
