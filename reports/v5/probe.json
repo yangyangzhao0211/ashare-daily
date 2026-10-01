@@ -1,0 +1,96 @@
+{
+  "version": "5.0",
+  "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded",
+  "passed": false,
+  "samples": [
+    {
+      "date": "2019-01-02",
+      "quality": {
+        "date": "2019-01-02",
+        "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded",
+        "expected_active": 3555,
+        "universe_stocks": 3569,
+        "received_stocks": 3569,
+        "missing_active": [],
+        "unexpected_codes": [],
+        "source_universe_complete": true,
+        "all_china_a_complete": false,
+        "status": "complete",
+        "missing_st_flags": 0,
+        "active_rows": 3555,
+        "reason": "All expected active stocks of the historical source universe received"
+      },
+      "cross_checks": [
+        {
+          "code": "sh.600000",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sz.000001",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sz.300001",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sh.600074",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        }
+      ]
+    },
+    {
+      "date": "2022-01-04",
+      "quality": {
+        "date": "2022-01-04",
+        "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded",
+        "expected_active": 4592,
+        "universe_stocks": 4603,
+        "received_stocks": 4603,
+        "missing_active": [],
+        "unexpected_codes": [],
+        "source_universe_complete": true,
+        "all_china_a_complete": false,
+        "status": "complete",
+        "missing_st_flags": 0,
+        "active_rows": 4592,
+        "reason": "All expected active stocks of the historical source universe received"
+      },
+      "cross_checks": [
+        {
+          "code": "sh.600000",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sz.000001",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sz.300001",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sh.688001",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        },
+        {
+          "code": "sh.600078",
+          "numeric_fields_match": true,
+          "unadjusted_price_basis_checked": true
+        }
+      ]
+    }
+  ],
+  "all_china_a_complete": false,
+  "started_at": "2026-10-01T14:51:40.459323+00:00",
+  "error": "timeout_or_transport: request deadline exceeded",
+  "completed_at": "2026-10-01T14:57:23.842118+00:00"
+}
