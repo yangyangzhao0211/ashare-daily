@@ -1,804 +1,318 @@
 #!/usr/bin/env python3
-import os,re,json,time,datetime as dt
-from concurrent.futures import ThreadPoolExecutor,as_completed
-import akshare as ak
+"""V5 Path A: probe -> serial full-market-by-date requests -> verified shards."""
+import argparse
+import datetime as dt
+import json
+import os
+from pathlib import Path
+import signal
+import subprocess
+import sys
+import time
+import zipfile
+from zoneinfo import ZoneInfo
+
 import pandas as pd
 
-ROOT=os.path.dirname(os.path.abspath(__file__)); DATA=os.path.join(ROOT,'data'); DAILY=os.path.join(DATA,'daily')
-UNIVERSE=os.path.join(DATA,'universe.csv'); DELIST=os.path.join(DATA,'delist.csv'); META=os.path.join(DATA,'meta.json'); STATE=os.path.join(DATA,'state_v4.json'); FAILED=os.path.join(DATA,'_failed.txt')
-START_YEAR=int(os.getenv('START_YEAR','2019')); MODE=os.getenv('MODE','recent').lower(); RECENT_DAYS=int(os.getenv('RECENT_DAYS','130')); WORKERS=int(os.getenv('MAX_WORKERS','8')); BATCH=int(os.getenv('BATCH_SIZE','200')); RETRIES=int(os.getenv('RETRIES','3')); YEARS_PER_RUN=int(os.getenv('HISTORY_YEARS_PER_RUN','1'))
-os.makedirs(DAILY,exist_ok=True)
-COLS=['date','code','name','open','high','low','close','volume','amount','turnover','pct_chg','src']
+from ashare_core import (Client, GATE_ID, NUMERIC, SCOPE, VERSION, SourceError,
+                        atomic_json, log, read_json, save_day, task_order,
+                        trading_days, universe_frame, utc_now, valid_saved, validate_day)
 
-def load(path,default):
+ROOT = Path(__file__).resolve().parent
+DATA = ROOT / "data" / "v5"
+REPORTS = ROOT / "reports" / "v5"
+STATE_PATH = DATA / "state.json"
+STOP = False
+
+
+def stop_signal(signum, frame):
+    global STOP
+    STOP = True
+    log(f"Signal {signum} received: finish current request and persist state")
+
+
+def git_checkpoint(enabled):
+    if not enabled:
+        return
+    # Only new verified partitions and metadata belong to this pipeline.
+    commands = [["git", "add", "--", "data/v5", "reports/v5"]]
+    for command in commands:
+        subprocess.run(command, cwd=ROOT, check=True, timeout=30)
+    changed = subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=ROOT).returncode
+    if changed == 0:
+        return
+    if changed != 1:
+        raise RuntimeError("Cannot inspect staged checkpoint")
+    subprocess.run(["git", "commit", "-m", f"A-share V5 checkpoint {utc_now()}"],
+                   cwd=ROOT, check=True, timeout=60)
+    subprocess.run(["git", "push"], cwd=ROOT, check=True, timeout=90)
+    log("Checkpoint pushed")
+
+
+def choose_probe_days(days):
+    choices = []
+    for year in (2019, 2022, 2025):
+        year_days = [d for d in days if d.startswith(str(year))]
+        if year_days:
+            choices.append(year_days[0])
+    choices.extend(days[-2:])
+    return list(dict.fromkeys(choices))
+
+
+def sample_codes(frame):
+    active = frame[frame.trade_status == 1]
+    choices = []
+    for prefix in ("sh.60", "sz.00", "sz.30", "sh.688"):
+        codes = active.loc[active.code.str.startswith(prefix), "code"]
+        if len(codes):
+            choices.append(codes.iloc[0])
+    st = active.loc[active.is_st.eq(1).fillna(False), "code"]
+    if len(st):
+        choices.append(st.iloc[0])
+    return list(dict.fromkeys(choices))
+
+
+def compare_sample(client, daily, universe, date, code):
+    sample_raw = client.call("sample", date=date, code=code)
+    one_universe = universe[universe.code == code]
+    # Reuse all numeric/basis checks without the universe's minimum-size rule.
+    sample, report = validate_day(sample_raw, one_universe, date)
+    if sample is None or len(sample) != 1:
+        raise ValueError(f"Single-stock sample missing: {date} {code}")
+    row = daily.set_index("code").loc[code]
+    other = sample.iloc[0]
+    for field in NUMERIC:
+        left, right = float(row[field]), float(other[field])
+        tolerance = max(1e-6, abs(right) * 1e-6)
+        if abs(left - right) > tolerance:
+            raise ValueError(f"Batch/single-stock mismatch {date} {code} {field}: {left} vs {right}")
+    if pd.notna(row.is_st) and (pd.isna(other.is_st) or row.is_st != other.is_st):
+        raise ValueError(f"ST status mismatch: {date} {code}")
+    return {"code": code, "numeric_fields_match": True,
+            "unadjusted_price_basis_checked": True}
+
+
+def run_probe(client, days, state, deadline):
+    # Invalidate previous approval before attempting a new probe.
+    state["gate"] = {"id": GATE_ID, "passed": False, "started_at": utc_now()}
+    atomic_json(STATE_PATH, state)
+    report = {"version": VERSION, "scope": SCOPE, "passed": False,
+              "samples": [], "all_china_a_complete": False, "started_at": utc_now()}
     try:
-        with open(path,encoding='utf-8') as f:return json.load(f)
-    except:return default
+        for date in choose_probe_days(days):
+            if STOP or time.monotonic() >= deadline:
+                raise RuntimeError("Probe time budget reached; gate stays closed")
+            log(f"PROBE {date}: historical universe and full-market daily")
+            universe = universe_frame(client.call("universe", date=date))
+            frame, quality = validate_day(client.call("daily", date=date), universe, date)
+            if frame is None:
+                raise ValueError(f"Probe coverage failed: {json.dumps(quality, ensure_ascii=False)}")
+            checks = []
+            for code in sample_codes(frame):
+                if STOP or time.monotonic() >= deadline:
+                    raise RuntimeError("Probe deadline reached during cross-check")
+                checks.append(compare_sample(client, frame, universe, date, code))
+            if not checks:
+                raise ValueError("Probe has no active cross-check samples")
+            report["samples"].append({"date": date, "quality": quality, "cross_checks": checks})
+        report.update(passed=True, completed_at=utc_now(),
+                      note="Verified against BaoStock historical universe and single-stock endpoint; not independent vendor validation")
+        state["gate"] = {"id": GATE_ID, "passed": True, "checked_at": utc_now(),
+                         "sample_dates": [s["date"] for s in report["samples"]], "scope": SCOPE}
+        log("PROBE PASSED: Path A enabled for the historical Shanghai/Shenzhen source universe")
+    except Exception as exc:
+        report.update(error=str(exc), completed_at=utc_now())
+        state["gate"].update(error=str(exc), checked_at=utc_now())
+        log(f"PROBE FAILED: {exc}. Historical downloading remains disabled.")
+        raise
+    finally:
+        atomic_json(REPORTS / "probe.json", report)
+        atomic_json(STATE_PATH, state)
+
+
+def gate_valid(state):
+    gate = state.get("gate", {})
+    if gate.get("id") != GATE_ID or not gate.get("passed"):
+        return False
+    checked = dt.datetime.fromisoformat(gate["checked_at"])
+    return dt.datetime.now(dt.timezone.utc) - checked < dt.timedelta(days=7)
+
+
+def rebuild_summary():
+    """Read only quality-approved V5 partitions; never merge legacy V4 data."""
+    rows = []
+    for path in sorted((DATA / "quality").glob("*.json")):
+        quality = read_json(path)
+        date = quality["date"]
+        if not valid_saved(DATA, date):
+            continue
+        rows.append({"date": date, "scope": SCOPE, **quality["breadth"],
+                     "source_universe_complete": True, "all_china_a_complete": False})
+    if rows:
+        temp = DATA / "market_daily.parquet.tmp"
+        pd.DataFrame(rows).to_parquet(temp, index=False, compression="zstd")
+        os.replace(temp, DATA / "market_daily.parquet")
+    return len(rows)
+
+
+def make_recovery(paths):
+    directory = ROOT / ".recovery_v5"
+    directory.mkdir(exist_ok=True)
+    with zipfile.ZipFile(directory / "last-run.zip", "w", zipfile.ZIP_DEFLATED) as archive:
+        for path in sorted(set(paths) | {STATE_PATH} | set(REPORTS.rglob("*.json"))):
+            if path.exists():
+                archive.write(path, path.relative_to(ROOT))
 
-def save(path,obj):
-    tmp=path+'.tmp'; open(tmp,'w',encoding='utf-8').write(json.dumps(obj,indent=2,ensure_ascii=False)); os.replace(tmp,path)
-
-def code(x):
-    m=re.search(r'(\d{6})',str(x or '')); return m.group(1) if m else ''
-
-def universe():
-    """
-    Robust A-share universe loader.
-
-    Priority:
-    1. Eastmoney current full-market snapshot
-    2. AkShare static A-share list
-    3. Existing local data/universe.csv
-
-    The local fallback is only accepted if it contains a plausible
-    full-market universe (>4500 stocks), so a partial/stale file
-    cannot silently corrupt the database.
-    """
-
-    # --------------------------------------------------------
-    # 1. Eastmoney live universe
-    # --------------------------------------------------------
-    try:
-        x = ak.stock_zh_a_spot_em()[["代码", "名称"]].copy()
-
-        x.columns = ["code", "name"]
-
-        x["code"] = x["code"].map(code)
-
-        x = (
-            x[x["code"] != ""]
-            .drop_duplicates("code")
-            .reset_index(drop=True)
-        )
-
-        if len(x) < 4500:
-            raise RuntimeError(
-                f"incomplete Eastmoney universe: {len(x)} stocks"
-            )
-
-        x["is_st"] = (
-            x["name"]
-            .fillna("")
-            .str.match(r"^\*?ST")
-        )
-
-        print(
-            f"universe: Eastmoney {len(x)} stocks",
-            flush=True
-        )
-
-        x.to_csv(
-            UNIVERSE,
-            index=False
-        )
-
-        return x
-
-    except Exception as e:
-        print(
-            f"Eastmoney universe failed: {type(e).__name__}: {e}",
-            flush=True
-        )
-
-    # --------------------------------------------------------
-    # 2. AkShare static universe
-    # --------------------------------------------------------
-    try:
-        x = ak.stock_info_a_code_name().copy()
-
-        x["code"] = x["code"].map(code)
-
-        x = (
-            x[["code", "name"]]
-            .drop_duplicates("code")
-            .reset_index(drop=True)
-        )
-
-        x = x[x["code"] != ""]
-
-        if len(x) < 4500:
-            raise RuntimeError(
-                f"incomplete AkShare universe: {len(x)} stocks"
-            )
-
-        x["is_st"] = (
-            x["name"]
-            .fillna("")
-            .str.match(r"^\*?ST")
-        )
-
-        print(
-            f"universe: AkShare fallback {len(x)} stocks",
-            flush=True
-        )
-
-        x.to_csv(
-            UNIVERSE,
-            index=False
-        )
-
-        return x
-
-    except Exception as e:
-        print(
-            f"AkShare universe failed: {type(e).__name__}: {e}",
-            flush=True
-        )
-
-    # --------------------------------------------------------
-    # 3. Local repository fallback
-    # --------------------------------------------------------
-    try:
-        if os.path.exists(UNIVERSE):
-
-            x = pd.read_csv(
-                UNIVERSE,
-                dtype={"code": str}
-            )
-
-            if "code" not in x.columns or "name" not in x.columns:
-                raise RuntimeError(
-                    "local universe.csv missing code/name columns"
-                )
-
-            x["code"] = x["code"].map(code)
-
-            x = (
-                x[x["code"] != ""]
-                .drop_duplicates("code")
-                .reset_index(drop=True)
-            )
-
-            if len(x) < 4500:
-                raise RuntimeError(
-                    f"local universe too small: {len(x)} stocks"
-                )
-
-            if "is_st" not in x.columns:
-                x["is_st"] = (
-                    x["name"]
-                    .fillna("")
-                    .str.match(r"^\*?ST")
-                )
-
-            else:
-                x["is_st"] = (
-                    x["is_st"]
-                    .astype(str)
-                    .str.lower()
-                    .isin(["true", "1", "yes"])
-                )
-
-            print(
-                f"universe: local fallback {len(x)} stocks",
-                flush=True
-            )
-
-            return x[
-                ["code", "name", "is_st"]
-            ]
-
-        raise RuntimeError(
-            "data/universe.csv does not exist"
-        )
-
-    except Exception as e:
-        print(
-            f"Local universe fallback failed: {type(e).__name__}: {e}",
-            flush=True
-        )
-
-    # --------------------------------------------------------
-    # All methods failed
-    # --------------------------------------------------------
-    raise RuntimeError(
-        "Cannot obtain a reliable A-share universe "
-        "from Eastmoney, AkShare, or local universe.csv"
-    )
-
-def delisted():
-    """
-    Best-effort delisted-stock list.
-
-    Returns:
-        code, name, list_date, delist_date
-
-    Failure of either exchange source is non-fatal.
-    This implementation deliberately selects columns instead of
-    renaming many columns at once, avoiding duplicate column names.
-    """
-
-    frames = []
-
-    # ========================================================
-    # Shanghai
-    # ========================================================
-
-    try:
-        raw = ak.stock_info_sh_delist("全部")
-
-        if raw is not None and not raw.empty:
-
-            def pick_sh(candidates):
-                for c in candidates:
-                    if c in raw.columns:
-                        return raw[c]
-                return pd.Series([None] * len(raw))
-
-            sh = pd.DataFrame({
-                "code": pick_sh([
-                    "公司代码",
-                    "证券代码",
-                    "股票代码",
-                ]),
-
-                "name": pick_sh([
-                    "公司简称",
-                    "证券简称",
-                    "股票简称",
-                    "名称",
-                ]),
-
-                "list_date": pick_sh([
-                    "上市日期",
-                ]),
-
-                "delist_date": pick_sh([
-                    "终止上市日期",
-                    "退市日期",
-                    "暂停上市日期",
-                ]),
-            })
-
-            sh["code"] = sh["code"].map(code)
-
-            sh = sh[
-                sh["code"] != ""
-            ].drop_duplicates("code")
-
-            frames.append(sh)
-
-            print(
-                f"SH delisted: {len(sh)}",
-                flush=True
-            )
-
-    except Exception as e:
-        print(
-            f"SH delist failed: "
-            f"{type(e).__name__}: {e}",
-            flush=True
-        )
-
-    # ========================================================
-    # Shenzhen
-    # ========================================================
-
-    try:
-        raw = ak.stock_info_sz_delist(
-            "终止上市公司"
-        )
-
-        if raw is not None and not raw.empty:
-
-            def find_column(keywords,
-                            exclude_keywords=None):
-
-                exclude_keywords = (
-                    exclude_keywords or []
-                )
-
-                for c in raw.columns:
-
-                    text = str(c)
-
-                    if (
-                        all(
-                            k in text
-                            for k in keywords
-                        )
-                        and not any(
-                            k in text
-                            for k in exclude_keywords
-                        )
-                    ):
-                        return c
-
-                return None
-
-            code_col = (
-                find_column(["代码"])
-            )
-
-            name_col = (
-                find_column(["简称"])
-                or find_column(["名称"])
-            )
-
-            list_col = find_column([
-                "上市",
-                "日期",
-            ])
-
-            delist_col = (
-                find_column([
-                    "终止",
-                    "日期",
-                ])
-                or find_column([
-                    "退市",
-                    "日期",
-                ])
-            )
-
-            sz = pd.DataFrame()
-
-            if code_col is not None:
-                sz["code"] = raw[code_col]
-            else:
-                sz["code"] = None
-
-            if name_col is not None:
-                sz["name"] = raw[name_col]
-            else:
-                sz["name"] = None
-
-            if list_col is not None:
-                sz["list_date"] = raw[list_col]
-            else:
-                sz["list_date"] = None
-
-            if delist_col is not None:
-                sz["delist_date"] = raw[delist_col]
-            else:
-                sz["delist_date"] = None
-
-            sz["code"] = sz["code"].map(code)
-
-            sz = sz[
-                sz["code"] != ""
-            ].drop_duplicates("code")
-
-            frames.append(sz)
-
-            print(
-                f"SZ delisted: {len(sz)}",
-                flush=True
-            )
-
-    except Exception as e:
-        print(
-            f"SZ delist failed: "
-            f"{type(e).__name__}: {e}",
-            flush=True
-        )
-
-    # ========================================================
-    # Merge
-    # ========================================================
-
-    if not frames:
-
-        print(
-            "delisted: unavailable; "
-            "continuing with empty list",
-            flush=True
-        )
-
-        return pd.DataFrame(
-            columns=[
-                "code",
-                "name",
-                "list_date",
-                "delist_date",
-            ]
-        )
-
-    try:
-
-        x = pd.concat(
-            frames,
-            ignore_index=True,
-            sort=False,
-        )
-
-    except Exception as e:
-
-        print(
-            f"delisted concat failed: {e}; "
-            "continuing with empty list",
-            flush=True
-        )
-
-        return pd.DataFrame(
-            columns=[
-                "code",
-                "name",
-                "list_date",
-                "delist_date",
-            ]
-        )
-
-    # Guarantee unique standardized columns.
-    x = x[
-        [
-            "code",
-            "name",
-            "list_date",
-            "delist_date",
-        ]
-    ].copy()
-
-    x["code"] = x["code"].map(code)
-
-    x = (
-        x[x["code"] != ""]
-        .drop_duplicates("code")
-        .reset_index(drop=True)
-    )
-
-    x["list_date"] = pd.to_datetime(
-        x["list_date"],
-        errors="coerce",
-    )
-
-    x["delist_date"] = pd.to_datetime(
-        x["delist_date"],
-        errors="coerce",
-    )
-
-    try:
-        x.to_csv(
-            DELIST,
-            index=False
-        )
-
-    except Exception as e:
-        print(
-            f"WARNING: cannot save delist.csv: {e}",
-            flush=True
-        )
-
-    print(
-        f"delisted total: {len(x)}",
-        flush=True
-    )
-
-    return x
-
-def em(c,s,e):
-    x=ak.stock_zh_a_hist(symbol=c,period='daily',start_date=s,end_date=e,adjust='')
-    if x is None or x.empty:return None
-    x=x.rename(columns={'日期':'date','开盘':'open','收盘':'close','最高':'high','最低':'low','成交量':'volume','成交额':'amount','换手率':'turnover','涨跌幅':'pct_chg'})
-    need=['date','open','high','low','close','volume','amount','turnover','pct_chg']
-    if any(c not in x for c in need):return None
-    x['date']=pd.to_datetime(x.date); x['code']=c; x['src']='em'; return x[COLS]
-
-def tx(c,s,e):
-    x=ak.stock_zh_a_hist_tx(symbol=('sh' if c.startswith(('6','9')) else 'sz')+c,start_date=s,end_date=e,adjust='')
-    if x is None or x.empty:return None
-    x['date']=pd.to_datetime(x.date); x=x[(x.date>=pd.Timestamp(s))&(x.date<=pd.Timestamp(e))].copy()
-    if x.empty:return None
-    x['code']=c; x['volume']=pd.to_numeric(x.volume,errors='coerce')/100; x['amount']=pd.to_numeric(x.close,errors='coerce')*x.volume*100; x['turnover']=float('nan'); x['pct_chg']=pd.to_numeric(x.close,errors='coerce').pct_change()*100; x['src']='tx'
-    return x[COLS]
-
-def fetch(c,s,e):
-    err=None
-    for i in range(RETRIES):
-        try:return 'OK',em(c,s,e)
-        except Exception as ex:err=ex; time.sleep(1.5*(i+1))
-    try:return 'OK',tx(c,s,e)
-    except Exception as ex:return 'FAILED',f'em={err}; tx={ex}'
-
-def threshold(c,st,d):
-    d=pd.Timestamp(d).date()
-    if st:return 5
-    if c.startswith('688'):return 20
-    if c.startswith(('300','301')):return 20 if d>=dt.date(2020,8,24) else 10
-    if c.startswith('8'):return 30 if d>=dt.date(2021,11,15) else 10
-    return 10
-
-def flags(x,stmap):
-    x=x.copy(); st=x.code.map(stmap).fillna(False); t=[threshold(c,s,d) for c,s,d in zip(x.code,st,x.date)]; t=pd.Series(t,index=x.index); x['limit_up_approx']=x.pct_chg>=t-.5; x['limit_down_approx']=x.pct_chg<=-t+.5; return x
-
-def upsert(x,stmap):
-    if x is None or x.empty:return
-    for y,g in x.groupby(pd.to_datetime(x.date).dt.year):
-        p=os.path.join(DAILY,f'{int(y)}.parquet'); g=flags(g,stmap)
-        if os.path.exists(p):g=pd.concat([pd.read_parquet(p),g],ignore_index=True)
-        g.date=pd.to_datetime(g.date); g=g.drop_duplicates(['date','code'],keep='last').sort_values(['date','code']); g.to_parquet(p,index=False)
-
-def write_meta():
-    m={'years':{},'total_rows':0}
-    for fn in os.listdir(DAILY):
-        if not fn.endswith('.parquet'):continue
-        try:
-            y=fn[:4]; x=pd.read_parquet(os.path.join(DAILY,fn)); d=pd.to_datetime(x.date); m['years'][y]={'rows':len(x),'stocks':x.code.nunique(),'date_min':str(d.min().date()),'date_max':str(d.max().date())}; m['total_rows']+=len(x)
-        except Exception as e:print('meta',fn,e)
-    if m['years']:m['date_min']=min(v['date_min'] for v in m['years'].values()); m['date_max']=max(v['date_max'] for v in m['years'].values())
-    save(META,m)
-
-def process(codes,s,e,state,namemap,stmap,label):
-    failed=[]
-    for off in range(0,len(codes),BATCH):
-        bs=codes[off:off+BATCH]; frames=[]; print(f'{label} batch {off+1}-{off+len(bs)}/{len(codes)}',flush=True)
-        with ThreadPoolExecutor(max_workers=WORKERS) as ex:
-            fut={ex.submit(fetch,c,s,e):c for c in bs}
-            for i,f in enumerate(as_completed(fut),1):
-                c=fut[f]
-                try:status,r=f.result()
-                except Exception as exx:status,r='FAILED',str(exx)
-                if status=='FAILED':failed.append(c); state['failed'][c]=r
-                else:
-                    state['failed'].pop(c,None)
-                    if r is not None and not r.empty:frames.append(r)
-                if i%50==0 or i==len(bs):print(f'  {i}/{len(bs)}',flush=True)
-        if frames:
-            x=pd.concat(frames,ignore_index=True); x['name']=x.code.map(namemap); upsert(x,stmap)
-        save(STATE,state); open(FAILED,'w').write('\n'.join(sorted(state['failed'])) or '(none)')
-    return failed
-
-def recent(uni,state,namemap,stmap):
-    end=dt.date.today(); start=end-dt.timedelta(days=RECENT_DAYS); print('='*60); print('RECENT',start,end,flush=True)
-    process(sorted(uni.code.astype(str)),start.strftime('%Y%m%d'),end.strftime('%Y%m%d'),state,namemap,stmap,'recent'); state['recent']['last_attempt_date']=str(end); save(STATE,state)
-
-def eligible(uni,dl,y):
-    cs=set(uni.code.astype(str));
-    if not dl.empty:
-        a=pd.Timestamp(f'{y}-01-01');b=pd.Timestamp(f'{y}-12-31'); q=dl[(dl.list_date.isna()| (dl.list_date<=b))&(dl.delist_date.isna()|(dl.delist_date>=a))];cs.update(q.code.astype(str))
-    return sorted(cs)
-
-def history(uni,dl,state,namemap,stmap):
-    yrs=0
-    for y in range(START_YEAR,dt.date.today().year+1):
-        if yrs>=YEARS_PER_RUN:break
-        ys=state['history']['years'].setdefault(str(y),{'done':[],'completed':False})
-        if ys['completed']:continue
-        cs=eligible(uni,dl,y); done=set(ys.get('done',[])); rem=[c for c in cs if c not in done]
-        print('='*60);print(f'HISTORY {y}: total={len(cs)} remaining={len(rem)}',flush=True)
-        for off in range(0,len(rem),BATCH):
-            bs=rem[off:off+BATCH]; frames=[]; bad=[]
-            with ThreadPoolExecutor(max_workers=WORKERS) as ex:
-                fut={ex.submit(fetch,c,f'{y}0101',f'{y}1231'):c for c in bs}
-                for i,f in enumerate(as_completed(fut),1):
-                    c=fut[f]
-                    try:status,r=f.result()
-                    except Exception:status,r='FAILED','exception'
-                    if status=='OK':
-                        done.add(c)
-                        if r is not None and not r.empty:frames.append(r)
-                    else:bad.append(c);state['failed'][c]=r
-                    if i%50==0 or i==len(bs):print(f'  {i}/{len(bs)} resolved={len(done)} failed={len(bad)}',flush=True)
-            if frames:
-                x=pd.concat(frames,ignore_index=True);x['name']=x.code.map(namemap);upsert(x,stmap)
-            ys['done']=sorted(done);ys['failed']=sorted(bad);save(STATE,state);open(FAILED,'w').write('\n'.join(sorted(state['failed'])) or '(none)')
-        if len(done)==len(cs):ys['completed']=True;print(y,'COMPLETE',flush=True)
-        else:print(y,'incomplete; resume next history run',flush=True)
-        yrs+=1
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--mode", choices=["probe", "recent", "history", "repair"],
+                        default=os.getenv("MODE", "recent"))
+    parser.add_argument("--start-date", default=os.getenv("START_DATE", "2019-01-01"))
+    parser.add_argument("--end-date", default=None, help="Optional historical end date, YYYY-MM-DD")
+    parser.add_argument("--budget-minutes", type=float, default=float(os.getenv("RUN_MINUTES", "30")))
+    parser.add_argument("--max-days", type=int, default=int(os.getenv("MAX_DAYS", "100")))
+    parser.add_argument("--git-checkpoint", action="store_true",
+                        default=os.getenv("GIT_CHECKPOINT", "0") == "1")
+    args = parser.parse_args()
+    if args.budget_minutes <= 0 or args.max_days <= 0:
+        parser.error("Budget and max-days must be positive")
+    dt.date.fromisoformat(args.start_date)
+    for directory in (DATA, REPORTS):
+        directory.mkdir(parents=True, exist_ok=True)
+    state = read_json(STATE_PATH, {"version": VERSION, "tasks": {}, "gate": {}})
+    if state.get("version") != VERSION:
+        raise RuntimeError("Unsupported state version; keep old states separate")
+    state.setdefault("tasks", {})
+    started = time.monotonic()
+    deadline = started + args.budget_minutes * 60
+    client = Client(timeout=float(os.getenv("REQUEST_TIMEOUT", "60")), retries=2)
+    recovered_paths = []
+    summary = {"version": VERSION, "mode": args.mode, "scope": SCOPE,
+               "started_at": utc_now(), "completed_this_run": [], "issues_this_run": [],
+               "all_china_a_complete": False, "outcome": "running"}
+    code = 0
+    last_checkpoint, since_checkpoint = started, 0
+    try:
+        now = dt.datetime.now(ZoneInfo("Asia/Shanghai"))
+        # Before 21:00 only use yesterday or earlier; do not mark intraday data as final.
+        safe_end = now.date() if now.hour >= 21 else now.date() - dt.timedelta(days=1)
+        end = min(dt.date.fromisoformat(args.end_date), safe_end) if args.end_date else safe_end
+        if args.start_date > str(end):
+            raise ValueError("Start date is after the latest safe end date")
+        log(f"V5 Path A mode={args.mode}; calendar {args.start_date}..{end}; scope={SCOPE}")
+        calendar = client.call("calendar", start=args.start_date, end=str(end))
+        days = trading_days(calendar, args.start_date, str(end))
+        if not days:
+            raise ValueError("No trading dates in requested interval")
+        atomic_json(DATA / "calendar.json", {"start": args.start_date, "end": str(end),
+                                               "trading_days": days, "fetched_at": utc_now()})
+        if args.mode == "probe" or not gate_valid(state):
+            run_probe(client, days, state, min(deadline, started + 10 * 60))
+            git_checkpoint(args.git_checkpoint)
+        if args.mode == "probe":
+            summary["outcome"] = "probe_passed"
+        else:
+            # Recover file-before-state interruptions, and detect missing/corrupt shards.
+            for date in days:
+                if valid_saved(DATA, date):
+                    state["tasks"].setdefault(date, {})["status"] = "complete"
+                elif state["tasks"].get(date, {}).get("status") == "complete":
+                    state["tasks"][date].update(status="partial", reason="Saved shard/checksum missing")
+            pending = task_order(days, state["tasks"], args.mode,
+                                 int(os.getenv("RECENT_TRADING_DAYS", "120")), 5)
+            log(f"Queued {len(pending)} trading days; newest first; max {args.max_days} this run")
+            consecutive_errors = 0
+            for date in pending[:args.max_days]:
+                # Reserve 3 minutes for report/recovery/checkpoint work.
+                if STOP or time.monotonic() >= deadline - 180:
+                    log("Soft deadline reached; remaining dates will continue next run")
+                    break
+                task = state["tasks"].setdefault(date, {})
+                old_complete = task.get("status") == "complete" and valid_saved(DATA, date)
+                task["attempts"] = int(task.get("attempts", 0)) + 1
+                log(f"DAY {date}, attempt={task['attempts']}")
+                try:
+                    universe = universe_frame(client.call("universe", date=date))
+                    frame, quality = validate_day(client.call("daily", date=date), universe, date)
+                    if frame is None:
+                        status, reason = "partial", quality["reason"]
+                        atomic_json(REPORTS / "dates" / f"{date}.json", quality)
+                        summary["issues_this_run"].append({"date": date, "status": status,
+                                                         "reason": reason, "missing": quality["missing_active"]})
+                        if not old_complete:
+                            task.update(status=status, reason=reason)
+                        else:
+                            task.update(refresh_issue=reason)
+                        task["next_retry_at"] = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=6)).isoformat()
+                        consecutive_errors += 1
+                    else:
+                        quality = save_day(DATA, frame, quality)
+                        task.update(status="complete", checked_at=utc_now(), rows=len(frame))
+                        for key in ("next_retry_at", "reason", "refresh_issue"):
+                            task.pop(key, None)
+                        summary["completed_this_run"].append(date)
+                        recovered_paths.extend([DATA / "daily" / date[:4] / f"{date}.parquet",
+                                                DATA / "quality" / f"{date}.json"])
+                        consecutive_errors = 0
+                        log(f"SAVED {date}: {len(frame)} rows, expected active={quality['expected_active']}")
+                except (SourceError, ValueError) as exc:
+                    # Keep a previously verified shard during an unsuccessful refresh.
+                    if not old_complete:
+                        task.update(status="retryable_error" if isinstance(exc, SourceError) and not exc.permanent else "partial",
+                                    reason=str(exc))
+                    else:
+                        task.update(refresh_issue=str(exc))
+                    delay_hours = min(24, 2 ** min(task["attempts"], 4))
+                    task["next_retry_at"] = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=delay_hours)).isoformat()
+                    summary["issues_this_run"].append({"date": date, "reason": str(exc)})
+                    log(f"UNRESOLVED {date}: {exc}")
+                    consecutive_errors += 1
+                    if isinstance(exc, SourceError) and exc.permanent:
+                        state["gate"]["passed"] = False
+                        raise
+                state["updated_at"] = utc_now()
+                atomic_json(STATE_PATH, state)
+                since_checkpoint += 1
+                if since_checkpoint >= 5 or time.monotonic() - last_checkpoint >= 240:
+                    atomic_json(REPORTS / "last_run.json", summary)
+                    git_checkpoint(args.git_checkpoint)
+                    last_checkpoint, since_checkpoint = time.monotonic(), 0
+                if consecutive_errors >= 5:
+                    raise RuntimeError("Five consecutive unresolved days; circuit breaker stopped this run")
+                time.sleep(float(os.getenv("REQUEST_PAUSE", "1")))
+            complete = sum(state["tasks"].get(d, {}).get("status") == "complete" for d in days)
+            summary.update(verified_days=complete, target_days=len(days), remaining_days=len(days) - complete,
+                           latest_target_trade_date=days[-1],
+                           outcome="completed_with_gaps" if summary["issues_this_run"] else "batch_completed")
+            if summary["issues_this_run"]:
+                code = 3
+            rebuild_summary()
+            log(f"PROGRESS: verified={complete}/{len(days)}, new={len(summary['completed_this_run'])}, issues={len(summary['issues_this_run'])}")
+    except Exception as exc:
+        summary.update(outcome="failed", error=str(exc))
+        log(f"STOPPED: {exc}")
+        code = 2
+    finally:
+        client.close()
+        summary["finished_at"] = utc_now()
+        summary["elapsed_minutes"] = round((time.monotonic() - started) / 60, 2)
+        atomic_json(STATE_PATH, state)
+        atomic_json(REPORTS / "last_run.json", summary)
+        make_recovery(recovered_paths)
+        step_summary = os.getenv("GITHUB_STEP_SUMMARY")
+        if step_summary:
+            with open(step_summary, "a", encoding="utf-8") as output:
+                output.write("\n### A-share V5 Path A\n\n```json\n" + json.dumps(summary, ensure_ascii=False, indent=2) + "\n```\n")
+        try:
+            git_checkpoint(args.git_checkpoint)
+        except Exception as exc:
+            log(f"Final push failed: {exc}; download v5-recovery artifact before retrying")
+            code = 2
+    return code
 
-    print(
-        "A-share daily database V4.0",
-        dt.date.today(),
-        "MODE=",
-        MODE,
-        flush=True
-    )
 
-    # ========================================================
-    # Current listed universe
-    # ========================================================
-
-    u = universe()
-
-    nm = dict(
-        zip(
-            u.code,
-            u.name
-        )
-    )
-
-    sm = dict(
-        zip(
-            u.code,
-            u.is_st
-        )
-    )
-
-    # ========================================================
-    # Load state
-    # ========================================================
-
-    state = load(
-        STATE,
-        {
-            "recent": {},
-            "history": {
-                "years": {}
-            },
-            "failed": {},
-        }
-    )
-
-    if not isinstance(
-        state.get("failed"),
-        dict
-    ):
-        state["failed"] = {}
-
-    state.setdefault(
-        "recent",
-        {}
-    )
-
-    state.setdefault(
-        "history",
-        {
-            "years": {}
-        }
-    )
-
-    state["history"].setdefault(
-        "years",
-        {}
-    )
-
-    # ========================================================
-    # RECENT
-    # ========================================================
-    #
-    # Recent mode does NOT need delisted stocks.
-    # Avoid unnecessary fragile network calls.
-    # ========================================================
-
-    if MODE == "recent":
-
-        print(
-            "recent mode: skipping delisted lookup",
-            flush=True
-        )
-
-        recent(
-            u,
-            state,
-            nm,
-            sm
-        )
-
-    # ========================================================
-    # HISTORY
-    # ========================================================
-
-    elif MODE == "history":
-
-        print(
-            "history mode: loading delisted stocks",
-            flush=True
-        )
-
-        dl = delisted()
-
-        for _, r in dl.iterrows():
-
-            c = str(
-                r.code
-            )
-
-            nm.setdefault(
-                c,
-                r.get(
-                    "name",
-                    ""
-                )
-            )
-
-            sm.setdefault(
-                c,
-                bool(
-                    re.match(
-                        r"^\*?ST",
-                        str(
-                            r.get(
-                                "name",
-                                ""
-                            )
-                        )
-                    )
-                )
-            )
-
-        history(
-            u,
-            dl,
-            state,
-            nm,
-            sm
-        )
-
-    # ========================================================
-    # BOTH
-    # ========================================================
-
-    elif MODE == "both":
-
-        # Recent first.
-        print(
-            "both mode: running recent first",
-            flush=True
-        )
-
-        recent(
-            u,
-            state,
-            nm,
-            sm
-        )
-
-        # Then history.
-        print(
-            "both mode: loading delisted stocks",
-            flush=True
-        )
-
-        dl = delisted()
-
-        for _, r in dl.iterrows():
-
-            c = str(
-                r.code
-            )
-
-            nm.setdefault(
-                c,
-                r.get(
-                    "name",
-                    ""
-                )
-            )
-
-            sm.setdefault(
-                c,
-                bool(
-                    re.match(
-                        r"^\*?ST",
-                        str(
-                            r.get(
-                                "name",
-                                ""
-                            )
-                        )
-                    )
-                )
-            )
-
-        history(
-            u,
-            dl,
-            state,
-            nm,
-            sm
-        )
-
-    else:
-
-        raise ValueError(
-            "MODE must be recent/history/both"
-        )
-
-    # ========================================================
-    # Metadata
-    # ========================================================
-
-    write_meta()
-
-    save(
-        STATE,
-        state
-    )
-
-    print(
-        "V4 DONE",
-        flush=True
-    )
-if __name__=='__main__':main()
+if __name__ == "__main__":
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        signal.signal(sig, stop_signal)
+    sys.exit(main())

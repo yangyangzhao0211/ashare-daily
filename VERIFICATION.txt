@@ -1,0 +1,26 @@
+Package: ashare-daily-V5.0, Path A only
+Validation date: 2026-10-01
+
+Passed: 17 offline unittest cases covering:
+- probe failure blocks collection; batch/single-stock field mismatch
+- multi-run checkpoint continuation and persisted Parquet shards
+- empty/partial, duplicate, wrong-date and adjusted-price responses
+- invalid OHLC, non-finite values, numeric units and real amount preservation
+- historical active-universe coverage and suspended-stock handling
+- missing ST flags retained as unknown; Beijing/index rows excluded
+- corrupted metadata is not silently reset; shard checksum detects corruption
+- newest-first backlog, retry cooldown and ongoing recent-day refresh
+- complete calendar interval validation
+- exactly 2,000 batch rows do not trigger SDK pagination
+- hung worker is terminated by the parent's request deadline
+- push failure produces nonzero result
+
+Passed: Python compilation and workflow YAML/configuration checks.
+
+Live source attempt: anonymous BaoStock calendar connection returned
+10002007 (network receive error) in the file-generation environment.
+Real historical batch permissions, supported date range and GitHub-runner
+connectivity are NOT claimed verified. Run GitHub mode=probe before collection.
+
+Completion scope: BaoStock historical Shanghai/Shenzhen ordinary A shares,
+not independently verified full Chinese A-share coverage. Beijing/CDR excluded.
