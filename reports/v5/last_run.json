@@ -33,9 +33,17 @@
     "2026-03-02",
     "2026-02-27",
     "2026-02-26",
-    "2026-02-25"
+    "2026-02-25",
+    "2026-02-24",
+    "2026-02-13"
   ],
   "issues_this_run": [],
   "all_china_a_complete": false,
-  "outcome": "running"
+  "outcome": "batch_completed",
+  "verified_days": 152,
+  "target_days": 1880,
+  "remaining_days": 1728,
+  "latest_target_trade_date": "2026-09-30",
+  "finished_at": "2026-10-02T22:53:50.936335+00:00",
+  "elapsed_minutes": 27.38
 }
