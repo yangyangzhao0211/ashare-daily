@@ -58,9 +58,17 @@
     "2025-12-01",
     "2025-11-28",
     "2025-11-27",
-    "2025-11-26"
+    "2025-11-26",
+    "2025-11-25",
+    "2025-11-24"
   ],
   "issues_this_run": [],
   "all_china_a_complete": false,
-  "outcome": "running"
+  "outcome": "batch_completed",
+  "verified_days": 209,
+  "target_days": 1880,
+  "remaining_days": 1671,
+  "latest_target_trade_date": "2026-09-30",
+  "finished_at": "2026-10-03T22:05:13.651144+00:00",
+  "elapsed_minutes": 27.39
 }
