@@ -1374,6 +1374,36 @@
       "status": "complete",
       "checked_at": "2026-10-04T21:47:06.579883+00:00",
       "rows": 5160
+    },
+    "2025-10-24": {
+      "attempts": 1,
+      "status": "complete",
+      "checked_at": "2026-10-04T21:47:15.192870+00:00",
+      "rows": 5160
+    },
+    "2025-10-23": {
+      "attempts": 1,
+      "status": "complete",
+      "checked_at": "2026-10-04T21:47:22.014482+00:00",
+      "rows": 5159
+    },
+    "2025-10-22": {
+      "attempts": 1,
+      "status": "complete",
+      "checked_at": "2026-10-04T21:47:29.015854+00:00",
+      "rows": 5159
+    },
+    "2025-10-21": {
+      "attempts": 1,
+      "status": "complete",
+      "checked_at": "2026-10-04T21:47:33.136922+00:00",
+      "rows": 5158
+    },
+    "2025-10-20": {
+      "attempts": 1,
+      "status": "complete",
+      "checked_at": "2026-10-04T21:47:36.574871+00:00",
+      "rows": 5158
     }
   },
   "gate": {
@@ -1389,5 +1419,5 @@
     ],
     "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded"
   },
-  "updated_at": "2026-10-04T21:47:06.579938+00:00"
+  "updated_at": "2026-10-04T21:47:36.574927+00:00"
 }
