@@ -1,0 +1,26 @@
+{
+  "date": "2025-08-21",
+  "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded",
+  "expected_active": 5141,
+  "universe_stocks": 5152,
+  "received_stocks": 5152,
+  "missing_active": [],
+  "unexpected_codes": [],
+  "source_universe_complete": true,
+  "all_china_a_complete": false,
+  "status": "complete",
+  "missing_st_flags": 0,
+  "active_rows": 5141,
+  "reason": "All expected active stocks of the historical source universe received",
+  "rows": 5152,
+  "sha256": "e7dd9cc353717de2414fe85ff2c1af1b71a0b1f877979a4e98712761572c25dc",
+  "breadth": {
+    "stocks": 5141,
+    "up_count": 2098,
+    "down_count": 2896,
+    "flat_count": 147,
+    "total_amount_yuan": 2422273626292.12,
+    "median_pct_chg": -0.3138
+  },
+  "validated_at": "2026-10-04T21:58:14.366981+00:00"
+}
