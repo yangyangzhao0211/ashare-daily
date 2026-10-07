@@ -27,5 +27,8 @@
     }
   ],
   "all_china_a_complete": false,
-  "outcome": "running"
+  "outcome": "failed",
+  "error": "Five consecutive unresolved days; circuit breaker stopped this run",
+  "finished_at": "2026-10-07T16:01:19.046540+00:00",
+  "elapsed_minutes": 21.33
 }
