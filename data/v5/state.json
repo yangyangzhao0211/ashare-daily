@@ -2912,6 +2912,12 @@
       "status": "complete",
       "checked_at": "2026-10-08T19:22:49.048010+00:00",
       "rows": 5223
+    },
+    "2024-10-09": {
+      "attempts": 1,
+      "status": "complete",
+      "checked_at": "2026-10-08T23:34:34.789672+00:00",
+      "rows": 5101
     }
   },
   "gate": {
@@ -2927,5 +2933,5 @@
     ],
     "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded"
   },
-  "updated_at": "2026-10-08T19:24:15.760814+00:00"
+  "updated_at": "2026-10-08T23:34:34.789717+00:00"
 }
