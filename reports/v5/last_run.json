@@ -23,9 +23,17 @@
     "2024-06-12",
     "2024-06-11",
     "2024-06-07",
-    "2024-06-06"
+    "2024-06-06",
+    "2024-06-05",
+    "2024-06-04"
   ],
   "issues_this_run": [],
   "all_china_a_complete": false,
-  "outcome": "running"
+  "outcome": "batch_completed",
+  "verified_days": 569,
+  "target_days": 1882,
+  "remaining_days": 1313,
+  "latest_target_trade_date": "2026-10-09",
+  "finished_at": "2026-10-10T22:22:25.390203+00:00",
+  "elapsed_minutes": 27.17
 }
