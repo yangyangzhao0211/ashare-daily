@@ -78,9 +78,17 @@
     "2024-02-08",
     "2024-02-07",
     "2024-02-06",
-    "2024-02-05"
+    "2024-02-05",
+    "2024-02-02",
+    "2024-02-01"
   ],
   "issues_this_run": [],
   "all_china_a_complete": false,
-  "outcome": "running"
+  "outcome": "batch_completed",
+  "verified_days": 646,
+  "target_days": 1882,
+  "remaining_days": 1236,
+  "latest_target_trade_date": "2026-10-09",
+  "finished_at": "2026-10-11T22:42:22.527674+00:00",
+  "elapsed_minutes": 27.09
 }
