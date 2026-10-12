@@ -2,20 +2,16 @@
   "version": "5.0",
   "tasks": {
     "2026-09-30": {
-      "attempts": 10,
-      "status": "complete",
-      "checked_at": "2026-10-06T19:00:09.828952+00:00",
-      "rows": 5223,
-      "refresh_issue": "timeout_or_transport: request deadline exceeded",
-      "next_retry_at": "2026-10-10T07:36:42.952881+00:00"
-    },
-    "2026-09-29": {
       "attempts": 11,
       "status": "complete",
-      "checked_at": "2026-10-08T19:24:15.760742+00:00",
-      "rows": 5222,
-      "refresh_issue": "timeout_or_transport: request deadline exceeded",
-      "next_retry_at": "2026-10-10T07:41:35.729480+00:00"
+      "checked_at": "2026-10-12T18:08:49.633839+00:00",
+      "rows": 5223
+    },
+    "2026-09-29": {
+      "attempts": 12,
+      "status": "complete",
+      "checked_at": "2026-10-12T18:09:20.236883+00:00",
+      "rows": 5222
     },
     "2026-09-28": {
       "attempts": 11,
@@ -2908,12 +2904,10 @@
       "rows": 5101
     },
     "2026-10-08": {
-      "attempts": 3,
+      "attempts": 4,
       "status": "complete",
-      "checked_at": "2026-10-08T19:22:49.048010+00:00",
-      "rows": 5223,
-      "refresh_issue": "timeout_or_transport: request deadline exceeded",
-      "next_retry_at": "2026-10-09T23:32:47.516477+00:00"
+      "checked_at": "2026-10-12T18:08:13.478640+00:00",
+      "rows": 5223
     },
     "2024-10-09": {
       "attempts": 1,
@@ -3084,9 +3078,9 @@
       "rows": 5101
     },
     "2026-10-09": {
-      "attempts": 2,
+      "attempts": 3,
       "status": "complete",
-      "checked_at": "2026-10-09T18:56:16.302445+00:00",
+      "checked_at": "2026-10-12T18:07:26.561243+00:00",
       "rows": 5223
     },
     "2024-08-21": {
@@ -3886,6 +3880,12 @@
       "status": "complete",
       "checked_at": "2026-10-11T22:42:21.282238+00:00",
       "rows": 5104
+    },
+    "2026-10-12": {
+      "attempts": 1,
+      "status": "complete",
+      "checked_at": "2026-10-12T18:06:42.403479+00:00",
+      "rows": 5223
     }
   },
   "gate": {
@@ -3901,5 +3901,5 @@
     ],
     "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded"
   },
-  "updated_at": "2026-10-11T22:42:21.282288+00:00"
+  "updated_at": "2026-10-12T18:09:20.236931+00:00"
 }
