@@ -4176,6 +4176,18 @@
       "status": "complete",
       "checked_at": "2026-10-13T23:26:04.352897+00:00",
       "rows": 5079
+    },
+    "2023-11-24": {
+      "attempts": 1,
+      "status": "complete",
+      "checked_at": "2026-10-13T23:26:50.678032+00:00",
+      "rows": 5079
+    },
+    "2023-11-23": {
+      "attempts": 1,
+      "status": "complete",
+      "checked_at": "2026-10-13T23:27:31.557276+00:00",
+      "rows": 5079
     }
   },
   "gate": {
@@ -4191,5 +4203,5 @@
     ],
     "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded"
   },
-  "updated_at": "2026-10-13T23:26:04.352950+00:00"
+  "updated_at": "2026-10-13T23:27:31.557326+00:00"
 }
