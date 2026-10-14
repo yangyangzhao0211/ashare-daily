@@ -6,9 +6,15 @@
   "completed_this_run": [
     "2026-10-14",
     "2026-10-13",
-    "2026-10-12"
+    "2026-10-12",
+    "2026-10-09"
   ],
-  "issues_this_run": [],
+  "issues_this_run": [
+    {
+      "date": "2026-10-08",
+      "reason": "timeout_or_transport: request deadline exceeded"
+    }
+  ],
   "all_china_a_complete": false,
   "outcome": "running"
 }
