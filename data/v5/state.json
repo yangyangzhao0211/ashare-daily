@@ -4496,10 +4496,16 @@
   },
   "gate": {
     "id": "v5.0-shsz-unadjusted-strict-active-coverage",
-    "passed": false,
-    "started_at": "2026-10-16T17:35:32.244296+00:00",
-    "error": "timeout_or_transport: request deadline exceeded",
-    "checked_at": "2026-10-16T17:45:44.243790+00:00"
+    "passed": true,
+    "checked_at": "2026-10-16T21:36:50.584037+00:00",
+    "sample_dates": [
+      "2019-01-02",
+      "2022-01-04",
+      "2025-01-02",
+      "2026-10-15",
+      "2026-10-16"
+    ],
+    "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded"
   },
   "updated_at": "2026-10-15T22:04:40.377526+00:00"
 }
