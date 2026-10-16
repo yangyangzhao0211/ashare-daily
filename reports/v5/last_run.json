@@ -2,12 +2,12 @@
   "version": "5.0",
   "mode": "recent",
   "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded",
-  "started_at": "2026-10-16T13:23:52.497732+00:00",
+  "started_at": "2026-10-16T17:35:21.684353+00:00",
   "completed_this_run": [],
   "issues_this_run": [],
   "all_china_a_complete": false,
   "outcome": "failed",
   "error": "timeout_or_transport: request deadline exceeded",
-  "finished_at": "2026-10-16T13:32:06.253885+00:00",
-  "elapsed_minutes": 8.23
+  "finished_at": "2026-10-16T17:45:44.247801+00:00",
+  "elapsed_minutes": 10.38
 }

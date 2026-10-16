@@ -135,7 +135,7 @@
     }
   ],
   "all_china_a_complete": false,
-  "started_at": "2026-10-16T13:23:58.739289+00:00",
+  "started_at": "2026-10-16T17:35:32.248659+00:00",
   "error": "timeout_or_transport: request deadline exceeded",
-  "completed_at": "2026-10-16T13:32:06.249468+00:00"
+  "completed_at": "2026-10-16T17:45:44.243764+00:00"
 }
