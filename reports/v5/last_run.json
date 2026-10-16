@@ -4,7 +4,10 @@
   "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded",
   "started_at": "2026-10-16T21:29:42.152654+00:00",
   "completed_this_run": [
-    "2026-10-16"
+    "2026-10-16",
+    "2023-09-07",
+    "2023-09-06",
+    "2023-09-05"
   ],
   "issues_this_run": [],
   "all_china_a_complete": false,
