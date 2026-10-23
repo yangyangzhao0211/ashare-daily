@@ -22,9 +22,18 @@
     "2022-09-14",
     "2022-09-13",
     "2022-09-09",
-    "2022-09-08"
+    "2022-09-08",
+    "2022-09-07",
+    "2022-09-06",
+    "2022-09-05"
   ],
   "issues_this_run": [],
   "all_china_a_complete": false,
-  "outcome": "running"
+  "outcome": "batch_completed",
+  "verified_days": 999,
+  "target_days": 1892,
+  "remaining_days": 893,
+  "latest_target_trade_date": "2026-10-23",
+  "finished_at": "2026-10-23T22:01:52.585737+00:00",
+  "elapsed_minutes": 27.7
 }
