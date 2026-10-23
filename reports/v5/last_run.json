@@ -5,11 +5,16 @@
   "started_at": "2026-10-23T17:55:26.731980+00:00",
   "completed_this_run": [
     "2026-10-22",
-    "2026-10-21"
+    "2026-10-21",
+    "2026-10-20"
   ],
   "issues_this_run": [
     {
       "date": "2026-10-23",
+      "reason": "timeout_or_transport: request deadline exceeded"
+    },
+    {
+      "date": "2026-10-19",
       "reason": "timeout_or_transport: request deadline exceeded"
     }
   ],
