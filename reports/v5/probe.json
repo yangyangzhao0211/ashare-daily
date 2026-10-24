@@ -134,20 +134,20 @@
       ]
     },
     {
-      "date": "2026-10-15",
+      "date": "2026-10-22",
       "quality": {
-        "date": "2026-10-15",
+        "date": "2026-10-22",
         "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded",
-        "expected_active": 5214,
-        "universe_stocks": 5225,
-        "received_stocks": 5225,
+        "expected_active": 5217,
+        "universe_stocks": 5224,
+        "received_stocks": 5224,
         "missing_active": [],
         "unexpected_codes": [],
         "source_universe_complete": true,
         "all_china_a_complete": false,
         "status": "complete",
         "missing_st_flags": 0,
-        "active_rows": 5214,
+        "active_rows": 5217,
         "reason": "All expected active stocks of the historical source universe received"
       },
       "cross_checks": [
@@ -179,20 +179,20 @@
       ]
     },
     {
-      "date": "2026-10-16",
+      "date": "2026-10-23",
       "quality": {
-        "date": "2026-10-16",
+        "date": "2026-10-23",
         "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded",
-        "expected_active": 5215,
-        "universe_stocks": 5225,
-        "received_stocks": 5225,
+        "expected_active": 5218,
+        "universe_stocks": 5223,
+        "received_stocks": 5223,
         "missing_active": [],
         "unexpected_codes": [],
         "source_universe_complete": true,
         "all_china_a_complete": false,
         "status": "complete",
         "missing_st_flags": 0,
-        "active_rows": 5215,
+        "active_rows": 5218,
         "reason": "All expected active stocks of the historical source universe received"
       },
       "cross_checks": [
@@ -225,7 +225,7 @@
     }
   ],
   "all_china_a_complete": false,
-  "started_at": "2026-10-16T21:29:49.900508+00:00",
-  "completed_at": "2026-10-16T21:36:50.584028+00:00",
+  "started_at": "2026-10-24T21:03:28.543190+00:00",
+  "completed_at": "2026-10-24T21:11:34.132163+00:00",
   "note": "Verified against BaoStock historical universe and single-stock endpoint; not independent vendor validation"
 }

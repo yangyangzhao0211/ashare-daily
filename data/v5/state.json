@@ -6013,13 +6013,13 @@
   "gate": {
     "id": "v5.0-shsz-unadjusted-strict-active-coverage",
     "passed": true,
-    "checked_at": "2026-10-16T21:36:50.584037+00:00",
+    "checked_at": "2026-10-24T21:11:34.132172+00:00",
     "sample_dates": [
       "2019-01-02",
       "2022-01-04",
       "2025-01-02",
-      "2026-10-15",
-      "2026-10-16"
+      "2026-10-22",
+      "2026-10-23"
     ],
     "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded"
   },
