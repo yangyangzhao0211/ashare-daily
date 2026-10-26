@@ -20,8 +20,15 @@
     {
       "date": "2026-10-21",
       "reason": "timeout_or_transport: request deadline exceeded"
+    },
+    {
+      "date": "2026-10-20",
+      "reason": "timeout_or_transport: request deadline exceeded"
     }
   ],
   "all_china_a_complete": false,
-  "outcome": "running"
+  "outcome": "failed",
+  "error": "Five consecutive unresolved days; circuit breaker stopped this run",
+  "finished_at": "2026-10-26T15:44:21.696761+00:00",
+  "elapsed_minutes": 23.25
 }
