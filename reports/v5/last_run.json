@@ -16,6 +16,10 @@
     {
       "date": "2026-10-22",
       "reason": "timeout_or_transport: request deadline exceeded"
+    },
+    {
+      "date": "2026-10-21",
+      "reason": "timeout_or_transport: request deadline exceeded"
     }
   ],
   "all_china_a_complete": false,
