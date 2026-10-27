@@ -33,5 +33,11 @@
   ],
   "issues_this_run": [],
   "all_china_a_complete": false,
-  "outcome": "running"
+  "outcome": "batch_completed",
+  "verified_days": 1142,
+  "target_days": 1894,
+  "remaining_days": 752,
+  "latest_target_trade_date": "2026-10-27",
+  "finished_at": "2026-10-27T22:56:11.151427+00:00",
+  "elapsed_minutes": 27.31
 }
