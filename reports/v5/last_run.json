@@ -3,7 +3,9 @@
   "mode": "recent",
   "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded",
   "started_at": "2026-10-30T15:09:56.364255+00:00",
-  "completed_this_run": [],
+  "completed_this_run": [
+    "2026-10-28"
+  ],
   "issues_this_run": [
     {
       "date": "2026-10-30",
@@ -11,6 +13,10 @@
     },
     {
       "date": "2026-10-29",
+      "reason": "timeout_or_transport: request deadline exceeded"
+    },
+    {
+      "date": "2026-10-27",
       "reason": "timeout_or_transport: request deadline exceeded"
     }
   ],
