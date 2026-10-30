@@ -6876,9 +6876,9 @@
       "rows": 4635
     },
     "2026-10-28": {
-      "attempts": 5,
+      "attempts": 6,
       "status": "complete",
-      "checked_at": "2026-10-30T15:22:07.761068+00:00",
+      "checked_at": "2026-10-30T18:47:57.145546+00:00",
       "rows": 5222
     },
     "2022-02-09": {
@@ -7262,10 +7262,10 @@
       "rows": 4530
     },
     "2026-10-30": {
-      "attempts": 1,
-      "status": "retryable_error",
-      "reason": "timeout_or_transport: request deadline exceeded",
-      "next_retry_at": "2026-10-30T17:14:05.744977+00:00"
+      "attempts": 2,
+      "status": "complete",
+      "checked_at": "2026-10-30T18:45:13.691485+00:00",
+      "rows": 5222
     }
   },
   "gate": {
@@ -7281,5 +7281,5 @@
     ],
     "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded"
   },
-  "updated_at": "2026-10-30T15:29:20.653122+00:00"
+  "updated_at": "2026-10-30T18:47:57.145631+00:00"
 }
