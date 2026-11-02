@@ -16,5 +16,11 @@
     }
   ],
   "all_china_a_complete": false,
-  "outcome": "running"
+  "outcome": "completed_with_gaps",
+  "verified_days": 1277,
+  "target_days": 1898,
+  "remaining_days": 621,
+  "latest_target_trade_date": "2026-11-02",
+  "finished_at": "2026-11-02T22:40:20.931194+00:00",
+  "elapsed_minutes": 16.18
 }
