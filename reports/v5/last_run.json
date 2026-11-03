@@ -16,6 +16,10 @@
     {
       "date": "2026-10-30",
       "reason": "timeout_or_transport: request deadline exceeded"
+    },
+    {
+      "date": "2026-10-29",
+      "reason": "10002007: 网络接收错误。"
     }
   ],
   "all_china_a_complete": false,
