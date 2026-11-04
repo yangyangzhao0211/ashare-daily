@@ -7076,12 +7076,10 @@
       "rows": 4583
     },
     "2026-10-29": {
-      "attempts": 6,
+      "attempts": 7,
       "status": "complete",
-      "checked_at": "2026-11-02T22:32:21.993563+00:00",
-      "rows": 5222,
-      "refresh_issue": "10002007: 网络接收错误。",
-      "next_retry_at": "2026-11-04T08:45:43.587367+00:00"
+      "checked_at": "2026-11-04T16:38:28.700614+00:00",
+      "rows": 5222
     },
     "2021-12-17": {
       "attempts": 1,
@@ -7264,12 +7262,10 @@
       "rows": 4530
     },
     "2026-10-30": {
-      "attempts": 5,
+      "attempts": 6,
       "status": "complete",
-      "checked_at": "2026-11-02T22:30:32.868691+00:00",
-      "rows": 5222,
-      "refresh_issue": "timeout_or_transport: request deadline exceeded",
-      "next_retry_at": "2026-11-04T08:41:01.400959+00:00"
+      "checked_at": "2026-11-04T16:36:47.795732+00:00",
+      "rows": 5222
     },
     "2021-11-05": {
       "attempts": 1,
@@ -7686,12 +7682,10 @@
       "rows": 4405
     },
     "2026-11-02": {
-      "attempts": 3,
+      "attempts": 4,
       "status": "complete",
-      "checked_at": "2026-11-02T22:26:44.733549+00:00",
-      "rows": 5222,
-      "refresh_issue": "timeout_or_transport: request deadline exceeded",
-      "next_retry_at": "2026-11-04T00:35:52.763630+00:00"
+      "checked_at": "2026-11-04T16:35:10.060774+00:00",
+      "rows": 5222
     },
     "2021-07-22": {
       "attempts": 1,
@@ -8007,5 +8001,5 @@
     ],
     "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded"
   },
-  "updated_at": "2026-11-04T16:33:20.525114+00:00"
+  "updated_at": "2026-11-04T16:38:28.700676+00:00"
 }
