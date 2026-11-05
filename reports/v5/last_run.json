@@ -12,8 +12,18 @@
     {
       "date": "2026-11-02",
       "reason": "timeout_or_transport: request deadline exceeded"
+    },
+    {
+      "date": "2026-10-30",
+      "reason": "timeout_or_transport: request deadline exceeded"
     }
   ],
   "all_china_a_complete": false,
-  "outcome": "running"
+  "outcome": "completed_with_gaps",
+  "verified_days": 1355,
+  "target_days": 1901,
+  "remaining_days": 546,
+  "latest_target_trade_date": "2026-11-05",
+  "finished_at": "2026-11-05T16:56:56.715901+00:00",
+  "elapsed_minutes": 18.57
 }
