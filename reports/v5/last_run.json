@@ -57,5 +57,8 @@
   ],
   "issues_this_run": [],
   "all_china_a_complete": false,
-  "outcome": "running"
+  "outcome": "failed",
+  "error": "Command '['git', 'push']' returned non-zero exit status 1.",
+  "finished_at": "2026-11-06T23:46:01.516315+00:00",
+  "elapsed_minutes": 23.25
 }
