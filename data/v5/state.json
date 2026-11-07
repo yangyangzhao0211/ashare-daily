@@ -8629,13 +8629,13 @@
   "gate": {
     "id": "v5.0-shsz-unadjusted-strict-active-coverage",
     "passed": true,
-    "checked_at": "2026-10-31T21:53:09.939315+00:00",
+    "checked_at": "2026-11-07T22:12:44.237663+00:00",
     "sample_dates": [
       "2019-01-02",
       "2022-01-04",
       "2025-01-02",
-      "2026-10-29",
-      "2026-10-30"
+      "2026-11-05",
+      "2026-11-06"
     ],
     "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded"
   },
