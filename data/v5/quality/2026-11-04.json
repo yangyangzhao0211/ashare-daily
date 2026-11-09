@@ -13,7 +13,7 @@
   "active_rows": 5217,
   "reason": "All expected active stocks of the historical source universe received",
   "rows": 5223,
-  "sha256": "91a796ab0e6382befa90afdfdeb638529755475e59a72482cb0913e1b73834f5",
+  "sha256": "76c6d50064b6ab5136958ead6facbec24facf69cb3baee2c765e8a93f4b5444b",
   "breadth": {
     "stocks": 5217,
     "up_count": 4331,
@@ -22,5 +22,5 @@
     "total_amount_yuan": 2036996630897.51,
     "median_pct_chg": 1.8497
   },
-  "validated_at": "2026-11-09T19:02:42.247049+00:00"
+  "validated_at": "2026-11-09T23:11:13.111899+00:00"
 }
