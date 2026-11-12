@@ -5,9 +5,15 @@
   "started_at": "2026-11-12T16:57:30.423826+00:00",
   "completed_this_run": [
     "2026-11-12",
-    "2026-11-11"
+    "2026-11-11",
+    "2026-11-09"
   ],
-  "issues_this_run": [],
+  "issues_this_run": [
+    {
+      "date": "2026-11-10",
+      "reason": "timeout_or_transport: request deadline exceeded"
+    }
+  ],
   "all_china_a_complete": false,
   "outcome": "running"
 }
