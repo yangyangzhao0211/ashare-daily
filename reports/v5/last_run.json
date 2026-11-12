@@ -1,21 +1,16 @@
 {
   "version": "5.0",
-  "mode": "recent",
+  "mode": "history",
   "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded",
-  "started_at": "2026-11-12T20:59:40.267087+00:00",
+  "started_at": "2026-11-12T23:46:00.420080+00:00",
   "completed_this_run": [
-    "2026-11-12",
-    "2026-11-11",
-    "2026-11-09",
-    "2026-11-06"
+    "2019-11-04",
+    "2019-11-01",
+    "2019-10-31",
+    "2019-10-30",
+    "2019-10-29"
   ],
   "issues_this_run": [],
   "all_china_a_complete": false,
-  "outcome": "batch_completed",
-  "verified_days": 1703,
-  "target_days": 1906,
-  "remaining_days": 203,
-  "latest_target_trade_date": "2026-11-12",
-  "finished_at": "2026-11-12T21:07:54.768709+00:00",
-  "elapsed_minutes": 8.24
+  "outcome": "running"
 }
