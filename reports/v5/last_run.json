@@ -16,6 +16,14 @@
     {
       "date": "2026-11-18",
       "reason": "pagination: Full page ended without a confirmed next-page response"
+    },
+    {
+      "date": "2026-11-17",
+      "reason": "timeout_or_transport: request deadline exceeded"
+    },
+    {
+      "date": "2026-11-16",
+      "reason": "timeout_or_transport: request deadline exceeded"
     }
   ],
   "all_china_a_complete": false,
