@@ -11513,13 +11513,13 @@
   "gate": {
     "id": "v5.0-shsz-unadjusted-strict-active-coverage",
     "passed": true,
-    "checked_at": "2026-11-14T22:44:45.560198+00:00",
+    "checked_at": "2026-11-21T23:34:53.776941+00:00",
     "sample_dates": [
       "2019-01-02",
       "2022-01-04",
       "2025-01-02",
-      "2026-11-12",
-      "2026-11-13"
+      "2026-11-19",
+      "2026-11-20"
     ],
     "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded"
   },

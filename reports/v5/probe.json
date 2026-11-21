@@ -134,20 +134,20 @@
       ]
     },
     {
-      "date": "2026-11-12",
+      "date": "2026-11-19",
       "quality": {
-        "date": "2026-11-12",
+        "date": "2026-11-19",
         "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded",
-        "expected_active": 5217,
-        "universe_stocks": 5224,
-        "received_stocks": 5224,
+        "expected_active": 5216,
+        "universe_stocks": 5223,
+        "received_stocks": 5223,
         "missing_active": [],
         "unexpected_codes": [],
         "source_universe_complete": true,
         "all_china_a_complete": false,
         "status": "complete",
         "missing_st_flags": 0,
-        "active_rows": 5217,
+        "active_rows": 5216,
         "reason": "All expected active stocks of the historical source universe received"
       },
       "cross_checks": [
@@ -179,9 +179,9 @@
       ]
     },
     {
-      "date": "2026-11-13",
+      "date": "2026-11-20",
       "quality": {
-        "date": "2026-11-13",
+        "date": "2026-11-20",
         "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded",
         "expected_active": 5215,
         "universe_stocks": 5223,
@@ -225,7 +225,7 @@
     }
   ],
   "all_china_a_complete": false,
-  "started_at": "2026-11-14T22:40:07.517685+00:00",
-  "completed_at": "2026-11-14T22:44:45.560190+00:00",
+  "started_at": "2026-11-21T23:31:11.704044+00:00",
+  "completed_at": "2026-11-21T23:34:53.776933+00:00",
   "note": "Verified against BaoStock historical universe and single-stock endpoint; not independent vendor validation"
 }
