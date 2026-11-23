@@ -11390,12 +11390,10 @@
       "rows": 3581
     },
     "2026-11-17": {
-      "attempts": 7,
+      "attempts": 8,
       "status": "complete",
-      "checked_at": "2026-11-19T21:49:00.573674+00:00",
-      "rows": 5223,
-      "refresh_issue": "timeout_or_transport: request deadline exceeded",
-      "next_retry_at": "2026-11-21T09:20:20.557166+00:00"
+      "checked_at": "2026-11-23T20:33:09.011424+00:00",
+      "rows": 5223
     },
     "2019-01-22": {
       "attempts": 1,
@@ -11525,5 +11523,5 @@
     ],
     "scope": "BaoStock historical Shanghai/Shenzhen A-share universe; Beijing excluded"
   },
-  "updated_at": "2026-11-23T20:31:38.380831+00:00"
+  "updated_at": "2026-11-23T20:33:09.011479+00:00"
 }
