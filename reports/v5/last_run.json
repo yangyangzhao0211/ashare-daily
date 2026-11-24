@@ -6,9 +6,17 @@
   "completed_this_run": [
     "2026-11-23",
     "2026-11-20",
-    "2026-11-19"
+    "2026-11-19",
+    "2026-11-18",
+    "2026-11-17"
   ],
   "issues_this_run": [],
   "all_china_a_complete": false,
-  "outcome": "running"
+  "outcome": "batch_completed",
+  "verified_days": 1913,
+  "target_days": 1913,
+  "remaining_days": 0,
+  "latest_target_trade_date": "2026-11-23",
+  "finished_at": "2026-11-24T01:13:30.997956+00:00",
+  "elapsed_minutes": 7.3
 }
